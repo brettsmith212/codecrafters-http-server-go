@@ -22,13 +22,16 @@ func main() {
 
 	req := make([]byte, 1024)
 	conn.Read(req)
-	reqStr := string(req)
-	lines := strings.Split(reqStr, "\r\n")
-	if len(lines) > 0 && lines[0] != "GET / HTTP/1.1" {
-		conn.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
-		conn.Close()
-		return
-	}
 
-	conn.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
+	splitHeader := strings.Split(string(req), "\r\n")
+	splitRequestLine := strings.Split(splitHeader[0], " ")
+
+	if splitRequestLine[1] == "/" {
+		conn.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
+	} else if strings.Split(splitRequestLine[1], "/")[1] == "echo" {
+		requestBody := strings.Split(splitRequestLine[1], "/")[2]
+		conn.Write([]byte("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: " + fmt.Sprint(len(requestBody)) + "\r\n\r\n" + requestBody))
+	} else {
+		conn.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
+	}
 }
